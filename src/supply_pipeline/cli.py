@@ -22,11 +22,12 @@ StageFn = Callable[[Config], None]
 def _stage_registry() -> dict[str, StageFn]:
     # Imported lazily so that ``--help`` stays fast and a broken stage module
     # does not prevent other stages from running.
-    from supply_pipeline import backtest, data, deck, evaluate, forecast, orders, report, risk
+    from supply_pipeline import backtest, blindtest, data, deck, evaluate, forecast, orders, report, risk
 
     return {
         "prepare": data.run,
         "backtest": backtest.run,
+        "blindtest": blindtest.run,
         "forecast": forecast.run,
         "risk": risk.run,
         "orders": orders.run,
@@ -36,7 +37,7 @@ def _stage_registry() -> dict[str, StageFn]:
     }
 
 
-STAGE_ORDER = ("prepare", "backtest", "forecast", "risk", "orders", "report", "deck", "evaluate")
+STAGE_ORDER = ("prepare", "backtest", "blindtest", "forecast", "risk", "orders", "report", "deck", "evaluate")
 
 
 def _run_stage(name: str, fn: StageFn, cfg: Config) -> None:

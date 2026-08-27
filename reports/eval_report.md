@@ -1,6 +1,6 @@
 # Evaluation scorecard
 
-39 gates: 39 pass, 0 warn, 0 FAIL.
+42 gates: 42 pass, 0 warn, 0 FAIL.
 
 | area | gate | value | op | threshold | severity | status | note |
 |---|---|---|---|---|---|---|---|
@@ -22,6 +22,9 @@
 | forecast | holdout_coverage_80_calibrated | 0.9061 | in | [0.72, 0.93] | soft | pass |  |
 | forecast | calibration_table_complete | 48 | == | 48.0 | hard | pass | two intervals per model x cluster |
 | forecast | selection_covers_all_clusters | 6 | == | 6.0 | hard | pass |  |
+| blind | blind_wape_pre_registered | 0.1202 | <= | 0.25 | hard | pass | sealed last fold, selection made without it |
+| blind | blind_selection_regret | 0.004503 | <= | 0.05 | soft | pass | pre-registered choice vs best model in hindsight |
+| blind | blind_beats_best_naive | 0.04478 | >= | 0.0 | soft | pass |  |
 | risk | best_method_recall | 0.7379 | >= | 0.5 | soft | pass |  |
 | risk | prob_method_false_alarm_rate | 0.06483 | <= | 0.15 | soft | pass |  |
 | risk | methods_evaluated | 3 | == | 3.0 | hard | pass |  |
@@ -41,5 +44,5 @@
 | orders | portfolio_service_level_vs_ma4 | 0.001808 | >= | -1e-09 | soft | pass |  |
 | orders | lines_below_90_vs_ma4 | 9 | >= | 0 | soft | pass | recommendation should not leave more lines below 90% than the naive policy |
 | report | summary_sections_present | 5 | == | 5.0 | hard | pass |  |
-| report | figures_written | 10 | >= | 10.0 | hard | pass |  |
+| report | figures_written | 11 | >= | 10.0 | hard | pass |  |
 | report | deck_slides | 10 | == | 10.0 | hard | pass |  |

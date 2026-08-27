@@ -17,6 +17,9 @@ forecast,holdout_coverage_90_calibrated,0.9452489837398377,in,"[0.85, 0.97]",har
 forecast,holdout_coverage_80_calibrated,0.9061229674796748,in,"[0.72, 0.93]",soft,pass,
 forecast,calibration_table_complete,48.0,==,48.0,hard,pass,two intervals per model x cluster
 forecast,selection_covers_all_clusters,6.0,==,6.0,hard,pass,
+blind,blind_wape_pre_registered,0.12019693006444966,<=,0.25,hard,pass,"sealed last fold, selection made without it"
+blind,blind_selection_regret,0.004503120339799563,<=,0.05,soft,pass,pre-registered choice vs best model in hindsight
+blind,blind_beats_best_naive,0.04478384924771943,>=,0.0,soft,pass,
 risk,best_method_recall,0.7378640776699029,>=,0.5,soft,pass,
 risk,prob_method_false_alarm_rate,0.0648320895522388,<=,0.15,soft,pass,
 risk,methods_evaluated,3.0,==,3.0,hard,pass,
@@ -36,5 +39,5 @@ orders,unflagged_lines_at_target_service_level_share,1.0,>=,0.9,soft,pass,316 un
 orders,portfolio_service_level_vs_ma4,0.0018082609541567596,>=,-1e-09,soft,pass,
 orders,lines_below_90_vs_ma4,9.0,>=,0,soft,pass,recommendation should not leave more lines below 90% than the naive policy
 report,summary_sections_present,5.0,==,5.0,hard,pass,
-report,figures_written,10.0,>=,10.0,hard,pass,
+report,figures_written,11.0,>=,10.0,hard,pass,
 report,deck_slides,10.0,==,10.0,hard,pass,

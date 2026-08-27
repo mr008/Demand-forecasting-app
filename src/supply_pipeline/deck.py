@@ -156,6 +156,8 @@ def run(cfg: Config) -> None:
     t, f = p.tables_dir, p.figures_dir
     series = pd.read_parquet(p.interim_dir / "series.parquet")
     overall = pd.read_csv(t / "backtest_metrics_overall.csv").set_index("model")
+    blind = pd.read_csv(t / "blind_test_overall.csv").set_index("model")
+    blind_sel = pd.read_csv(t / "blind_test_selection.csv")
     hold = pd.read_csv(t / "backtest_metrics_holdout_calibrated_overall.csv").set_index("model")
     risk_methods = pd.read_csv(t / "risk_eval_methods.csv")
     alerts = pd.read_csv(p.output_dir / f"risk_alerts_{cfg.data.as_of}.csv")
@@ -285,6 +287,7 @@ def run(cfg: Config) -> None:
         [
             f"Overall WAPE {lgbm['wape']:.2f} vs {overall.loc['ets', 'wape']:.2f} (ETS) and {ma4['wape']:.2f} (MA4); seasonal naive {overall.loc['seasonal_naive', 'wape']:.2f} with +{100 * overall.loc['seasonal_naive', 'bias']:.0f}% bias - last year is not a guide.",
             "Selection rule: lowest mean WAPE over 8 folds unless a simpler or steadier model is within 0.02. LightGBM wins outright in all six clusters.",
+            f"Blind test: with the last 8 weeks sealed and the choice made without them, LightGBM still leads (WAPE {blind.loc['lgbm', 'wape']:.3f} vs ETS {blind.loc['ets', 'wape']:.3f}); the pre-registered choice held in {int(blind_sel['choice_held'].sum())} of 6 clusters.",
             f"Bias {lgbm['bias']:+.2f}: slight under-forecast, concentrated in promo weeks.",
         ],
         Inches(8.1),

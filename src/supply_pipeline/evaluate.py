@@ -363,6 +363,34 @@ def order_gates(cfg: Config) -> list[Gate]:
     return gates
 
 
+def blind_gates(cfg: Config) -> list[Gate]:
+    p = cfg.paths
+    sel = pd.read_csv(p.tables_dir / "blind_test_selection.csv")
+    overall = pd.read_csv(p.tables_dir / "blind_test_overall.csv").set_index("model")
+    w = float(np.average(sel["blind_wape_pre_registered"], weights=sel["n"]))
+    w_best = float(np.average(sel["blind_wape_best"], weights=sel["n"]))
+    naive = overall.loc[[m for m in ("ma4", "seasonal_naive") if m in overall.index], "wape"].min()
+    gates: list[Gate] = []
+    gates.append(
+        Gate(
+            "blind",
+            "blind_wape_pre_registered",
+            w,
+            "<=",
+            cfg.eval.max_wape_selected,
+            "hard",
+            "sealed last fold, selection made without it",
+        )
+    )
+    gates.append(
+        Gate(
+            "blind", "blind_selection_regret", w - w_best, "<=", 0.05, "soft", "pre-registered choice vs best model in hindsight"
+        )
+    )
+    gates.append(Gate("blind", "blind_beats_best_naive", float(naive - w), ">=", 0.0, "soft"))
+    return gates
+
+
 def report_gates(cfg: Config) -> list[Gate]:
     p = cfg.paths
     gates: list[Gate] = []
@@ -389,7 +417,7 @@ def report_gates(cfg: Config) -> list[Gate]:
 
 # --------------------------------------------------------------------------- stage
 def run_gates(cfg: Config) -> pd.DataFrame:
-    gates = data_gates(cfg) + forecast_gates(cfg) + risk_gates(cfg) + order_gates(cfg) + report_gates(cfg)
+    gates = data_gates(cfg) + forecast_gates(cfg) + blind_gates(cfg) + risk_gates(cfg) + order_gates(cfg) + report_gates(cfg)
     return pd.DataFrame([g.row() for g in gates])
 
 

@@ -19,7 +19,7 @@ Requirements: Python 3.11+ (developed on 3.13), Windows or Linux/macOS. Put the 
 ./run.sh           # bash equivalent
 ```
 
-Single stages (after the first run): `.venv\Scripts\python -m supply_pipeline <prepare|backtest|forecast|risk|orders|report|deck|evaluate>`.
+Single stages (after the first run): `.venv\Scripts\python -m supply_pipeline <prepare|backtest|blindtest|forecast|risk|orders|report|deck|evaluate>`.
 Notebooks: `notebooks/01_eda.ipynb`, `notebooks/02_results.ipynb` (thin; they import the package).
 
 ## Tests and evaluation
@@ -48,6 +48,7 @@ src/supply_pipeline/
   features.py               weekly modelling table and per-series metadata / flags
   models/                   ma4, seasonal_naive, ets (statsmodels), lgbm (global quantile LightGBM)
   backtest.py               expanding-window folds, metrics, per-cluster selection, interval calibration
+  blindtest.py              sealed last fold: selection without it, all models scored on it, regret per cluster
   forecast.py               forecasts at the final and risk-evaluation origins with the selected models
   distributions.py          lognormal fit to forecast quantiles (P(stock-out), service level, lost sales)
   risk.py                   Track B scorers, labels, evaluation, as-of alert list
@@ -64,6 +65,8 @@ reports/{figures,tables}    everything the report and deck are built from
 **Data.** Daily sell-out is completed onto a calendar per series (gaps stay missing), outliers are flagged with a trailing robust z-score and winsorised for training only, and aggregated to ISO weeks (107 complete weeks). Store inventory is de-duplicated (three UPCs carry two item numbers), negative on-hand is clipped to zero for stock maths but counted as a stock-out signal, and rolled up to DC via the store catalog. Inventory covers 21 days; 2026-04-02 is the last day with full coverage and is the "current on-hand".
 
 **Forecasting.** Four models under one interface: seasonal naive, 4-week moving average, per-series ETS (additive damped trend, simulated intervals) and a global LightGBM quantile model (direct multi-horizon; lags, rolling stats, lagged price/promo, calendar counts, cluster/DC/UPC categoricals; level-scaled target). Expanding-window backtest: 8 origins every 4 weeks (2025-07-21 .. 2026-02-02), 8-week horizon, quantiles 5/10/50/90/95. Metrics: WAPE, MAPE, bias, scaled pinball, 80/90% coverage. Selection per ABC x XYZ cluster on mean WAPE with a stability/simplicity tie-break. Intervals are calibrated conformal-style per model x cluster on folds 1-5 and reported on folds 6-8.
+
+**Blind test.** The backtest's predictions are out-of-sample, but its model *selection* sees every fold. The `blindtest` stage seals the last fold (the final 8 weeks), redoes selection and calibration using only folds whose targets end before it, and scores all four models on the sealed weeks. It reports each cluster's pre-registered choice against the best model in hindsight ("regret"). No model is refitted; it reads `backtest_predictions.parquet`.
 
 **Risk.** Alert = likely short at stores within the 7-day lead time. Scorers: days-of-cover rule, P(7-day demand > on-hand) from the calibrated forecast, Isolation Forest over cover / probability / sales-vs-forecast / stock trend. Labels: >= 25% of a DC's stores at zero; alerts on day d are scored against d+1..d+7, using the forecast available at 2026-03-09. Precision, recall, false-alarm rate, threshold sweep and lead-time-to-alert (where onsets exist) are reported.
 

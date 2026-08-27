@@ -14,7 +14,7 @@ All from the repo root. The venv lives in `.venv/`; `run.ps1` / `run.sh` create 
 
 - One-command full run: `.\run.ps1` (PowerShell) or `./run.sh` (bash)
 - Full pipeline from an existing venv: `.venv\Scripts\python -m supply_pipeline run`
-- Single stage: `.venv\Scripts\python -m supply_pipeline <prepare|backtest|forecast|risk|orders|report|deck|evaluate>` (add `-v` for debug logs, `--config path` for an alternative config)
+- Single stage: `.venv\Scripts\python -m supply_pipeline <prepare|backtest|blindtest|forecast|risk|orders|report|deck|evaluate>` (add `-v` for debug logs, `--config path` for an alternative config)
 - Tests: `.venv\Scripts\python -m pytest` (~20 s; `-m "not e2e"` for the ~2 s unit subset; single test: `-k test_name`). The e2e tests build a synthetic dataset via `tests/synthetic.py` and run the whole pipeline once per session (`pipeline_run` fixture in `tests/conftest.py`); change the generator, not the tests, when a new data quirk needs covering.
 - Quality gates on the real run: `.venv\Scripts\python -m supply_pipeline evaluate` (also the last stage of `run`; hard-gate failure exits non-zero). Thresholds are in `[eval]` of `config.toml`; the synthetic config loosens accuracy gates in `tests/synthetic.py::_write_config`.
 - Install after editing `pyproject.toml`: `.venv\Scripts\python -m pip install -e ".[dev]"`
@@ -27,7 +27,7 @@ Full run takes ~2.5 minutes (backtest ~1.5 min: 8 folds x 4 models; ETS fits are
 
 ## Architecture
 
-`src/supply_pipeline/` is a flat package; `cli.py` runs stages in the fixed order `prepare -> backtest -> forecast -> risk -> orders -> report -> deck -> evaluate`, each stage being a module with a `run(cfg: Config) -> None`. Stages communicate only through files: `data/interim/*.parquet` (prepared tables, backtest predictions), `data/output/` (forecasts, alerts, the order CSV), `reports/tables|figures` (what the report and deck consume). Re-running one stage therefore requires its upstream artifacts to exist.
+`src/supply_pipeline/` is a flat package; `cli.py` runs stages in the fixed order `prepare -> backtest -> blindtest -> forecast -> risk -> orders -> report -> deck -> evaluate`, each stage being a module with a `run(cfg: Config) -> None`. `blindtest` refits nothing: it re-selects models using only backtest folds whose targets end before the sealed last fold, then scores every model on that fold. Stages communicate only through files: `data/interim/*.parquet` (prepared tables, backtest predictions), `data/output/` (forecasts, alerts, the order CSV), `reports/tables|figures` (what the report and deck consume). Re-running one stage therefore requires its upstream artifacts to exist.
 
 - `config.py` loads `config.toml` (stdlib `tomllib`) into frozen dataclasses. Every tunable and every data-policy assumption (as-of date, cold-start threshold, outlier z, stock-out label share, service-level targets, cost ratio) is a config value - add new knobs there, not as module constants.
 - `schema.py` / `data.py` / `calendar_features.py` / `features.py`: load + validate raw CSVs, dedupe on `upc`, aggregate inventory store -> cedis via the store catalog, complete the daily calendar per series (gaps stay NaN), flag outliers, build the weekly table (ISO weeks, Monday start).

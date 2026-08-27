@@ -59,6 +59,16 @@ Calibrated coverage by cluster for the selected models:
 | B-Z | lgbm | 0.109 | -0.051 | 0.950 | 0.893 |
 | C-Z | lgbm | 0.089 | 0.041 | 1.000 | 0.972 |
 
+**Blind test.** The last replay (origin 2026-02-02, weeks 2026-02-09 to 2026-03-30) is sealed; model selection and interval calibration are redone using only folds whose targets end before it, then every model is scored on the sealed weeks. The pre-registered choice held in 4 of 6 clusters; its blind WAPE is 0.120 against 0.116 for the best model in hindsight (regret 0.005). Where it did not hold (A-Z), ETS edged LightGBM by 0.018 WAPE; the two are within the selection tolerance and the pipeline would switch automatically if that persists.
+
+| model | n | wape | bias | coverage_90_raw | coverage_90 | coverage_80 |
+|---|---|---|---|---|---|---|
+| lgbm | 2624 | 0.115 | -0.038 | 0.796 | 0.963 | 0.927 |
+| ets | 2624 | 0.123 | -0.008 | 0.944 | 0.915 | 0.829 |
+| ma4 | 2624 | 0.165 | -0.108 | 0.899 | 0.855 | 0.712 |
+| seasonal_naive | 2624 | 0.521 | 0.383 | 0.770 | 0.922 | 0.779 |
+
+![blind test](figures\blind_test.png)
 ![model comparison](figures\model_comparison.png)
 ![wape by horizon](figures\wape_by_horizon.png)
 ![coverage](figures\coverage_calibration.png)

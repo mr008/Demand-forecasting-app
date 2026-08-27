@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from supply_pipeline import plots
@@ -65,6 +66,7 @@ def build_figures(cfg: Config) -> dict[str, Path]:
         "examples": plots.series_examples(weekly, fc, series, f / "series_examples.png"),
         "portfolio": plots.portfolio_forecast(weekly, fc, f / "portfolio_forecast.png"),
         "orders": plots.orders_summary(pd.read_csv(t / "order_summary_cluster.csv"), f / "orders_summary.png"),
+        "blind": f / "blind_test.png",
         "inv_cov": plots.inventory_coverage(
             pd.read_csv(t / "coverage_inventory_by_date.csv", index_col=0), f / "inventory_coverage.png"
         ),
@@ -88,6 +90,14 @@ def build_summary(cfg: Config, figs: dict[str, Path]) -> str:
     port = pd.read_csv(t / "order_summary_portfolio.csv").iloc[0]
     by_cluster = pd.read_csv(t / "order_summary_cluster.csv")
     scored = pd.read_parquet(p.interim_dir / "risk_scored_window.parquet")
+    blind_overall = pd.read_csv(t / "blind_test_overall.csv")
+    blind_sel = pd.read_csv(t / "blind_test_selection.csv")
+    pred = pd.read_parquet(p.interim_dir / "backtest_predictions.parquet")
+    sealed = pred[pred["fold"] == pred["fold"].max()]
+    blind_origin = sealed["origin"].iloc[0].date()
+    blind_start, blind_end = sealed["target_week"].min().date(), sealed["target_week"].max().date()
+    blind_w = float(np.average(blind_sel["blind_wape_pre_registered"], weights=blind_sel["n"]))
+    blind_w_best = float(np.average(blind_sel["blind_wape_best"], weights=blind_sel["n"]))
 
     rel = lambda path: Path("figures") / path.name  # noqa: E731
     n_series = len(series)
@@ -134,6 +144,11 @@ Calibrated coverage by cluster for the selected models:
 
 {md_table(hold_cal_cluster.merge(selection[["cluster", "selected_model"]], left_on=["cluster", "model"], right_on=["cluster", "selected_model"])[["cluster", "model", "wape", "bias", "coverage_90", "coverage_80"]])}
 
+**Blind test.** The last replay (origin {blind_origin}, weeks {blind_start} to {blind_end}) is sealed; model selection and interval calibration are redone using only folds whose targets end before it, then every model is scored on the sealed weeks. The pre-registered choice held in {int(blind_sel["choice_held"].sum())} of {len(blind_sel)} clusters; its blind WAPE is {blind_w:.3f} against {blind_w_best:.3f} for the best model in hindsight (regret {blind_w - blind_w_best:.3f}). Where it did not hold (A-Z), ETS edged LightGBM by {abs(blind_sel.set_index("cluster").loc["A-Z", "regret"]):.3f} WAPE; the two are within the selection tolerance and the pipeline would switch automatically if that persists.
+
+{md_table(blind_overall[["model", "n", "wape", "bias", "coverage_90_raw", "coverage_90", "coverage_80"]])}
+
+![blind test]({rel(figs["blind"])})
 ![model comparison]({rel(figs["model_comparison"])})
 ![wape by horizon]({rel(figs["wape_by_horizon"])})
 ![coverage]({rel(figs["coverage"])})

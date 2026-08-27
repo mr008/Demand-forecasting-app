@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supply-pipeline"
+version = "0.1.0"
+description = "Demand forecasting, stock-out risk detection and supply-order generation for a CPG portfolio"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=2",
+    "pyarrow>=15",
+    "scipy>=1.11",
+    "scikit-learn>=1.5",
+    "lightgbm>=4.3",
+    "statsmodels>=0.14",
+    "matplotlib>=3.8",
+    "holidays>=0.50",
+    "python-pptx>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "nbformat",
+    "nbclient",
+    "nbconvert",
+    "ipykernel",
+]
+
+[project.scripts]
+supply-pipeline = "supply_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py311"
+src = ["src", "tests"]
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF"]
+ignore = [
+    "E501",   # line length is enforced by the formatter's judgement, not the linter
+    "RUF012", # mutable class attributes are fine on the model classes
+    "RUF005", # `KEY + ["h"]` reads better than `[*KEY, "h"]` for the pandas key lists used everywhere
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+
+[tool.mypy]
+# numpy 2.x stubs use the `type` statement, so mypy must target 3.12+ even though the code runs on 3.11.
+python_version = "3.12"
+files = ["src/supply_pipeline"]
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = false
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["lightgbm.*", "statsmodels.*", "pptx.*", "holidays.*", "joblib.*", "scipy.*", "sklearn.*", "matplotlib.*", "dateutil.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "e2e: full pipeline run over the synthetic dataset (about 1-2 minutes; deselect with -m 'not e2e')",
+]

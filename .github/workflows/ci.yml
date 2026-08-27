@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: ruff + mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - run: ruff check src tests notebooks/build_notebooks.py
+      - run: ruff format --check src tests notebooks/build_notebooks.py
+      - run: mypy
+
+  test:
+    name: pytest (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - name: Unit tests
+        run: pytest -m "not e2e"
+      - name: End-to-end tests on the synthetic dataset
+        run: pytest -m e2e
+
+  synthetic-run:
+    name: one-command run + quality gates (synthetic data)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - name: Generate synthetic challenge data
+        run: python -m tests.synthetic build/synthetic
+      - name: Run every stage, including the evaluate gates (non-zero exit on a hard failure)
+        run: python -m supply_pipeline --config build/synthetic/config.toml run
+      - name: Publish the synthetic run's report, deck and order file
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-run-outputs
+          path: |
+            build/synthetic/reports/summary.md
+            build/synthetic/reports/eval_report.md
+            build/synthetic/reports/deck.pptx
+            build/synthetic/reports/figures/*.png
+            build/synthetic/data/output/*.csv
+          retention-days: 14

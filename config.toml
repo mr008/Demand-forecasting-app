@@ -1,0 +1,66 @@
+# All pipeline settings. Paths are relative to the directory containing this file.
+
+[paths]
+raw_dir = "data/raw"
+interim_dir = "data/interim"
+output_dir = "data/output"
+reports_dir = "reports"
+sell_out = "challenge_daily_sell_out_pricing.csv"
+inventory = "challenge_inventory.csv"
+store_catalog = "challenge_store_catalog.csv"
+upc_catalog = "challenge_upc_catalog.csv"
+
+[data]
+# Last inventory date with full UPC/store coverage; used as "current on-hand" for orders.
+as_of = "2026-04-02"
+# First Monday in the sell-out history and the start of the last complete ISO week.
+first_week_start = "2024-03-18"
+last_complete_week_start = "2026-03-30"
+# Series with fewer weeks of history than this at the forecast origin are treated as cold-start.
+cold_start_weeks = 26
+# Robust z-score (rolling median / MAD) above which a daily value is flagged as an outlier.
+outlier_mad_z = 5.0
+# Negative store on-hand is clipped to zero for stock math but counted as a stock-out signal.
+clip_negative_on_hand = true
+# A cedis-day is labelled a stock-out when at least this share of reporting stores has on-hand <= 0.
+stockout_store_share = 0.25
+
+[forecast]
+horizon_weeks = 8
+quantiles = [0.05, 0.10, 0.50, 0.90, 0.95]
+backtest_folds = 8
+backtest_step_weeks = 4
+seed = 42
+
+[risk]
+# Forecast origin used to score Track B "as a planner would have seen it": its
+# 8-week horizon must cover the inventory window (2026-03-20 .. 2026-04-09).
+eval_origin = "2026-03-09"
+# Alert when P(demand over lead time > on-hand) exceeds this.
+prob_threshold = 0.5
+# Isolation Forest contamination prior.
+contamination = 0.05
+
+[orders]
+# Weekly ordering: protection period = lead_time_days + review_period_days.
+review_period_days = 7
+# Unit value = recent final_price * cost_ratio (1.0 = value stock at shelf price).
+cost_ratio = 1.0
+# Target cycle service level by ABC class for the quantile-based order-up-to level.
+[orders.service_level]
+A = 0.95
+B = 0.90
+C = 0.85
+
+[eval]
+# Quality gates checked by `python -m supply_pipeline evaluate` (hard gates fail the run).
+max_weekly_missing_share = 0.02
+min_series_with_inventory_share = 0.95
+max_wape_selected = 0.25
+min_rel_improvement_vs_naive = 0.05
+max_abs_bias = 0.10
+coverage_90_range = [0.85, 0.97]
+coverage_80_range = [0.72, 0.93]
+min_risk_recall = 0.50
+max_prob_false_alarm_rate = 0.15
+min_share_lines_at_target_sl = 0.90

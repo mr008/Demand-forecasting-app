@@ -1,0 +1,40 @@
+area,gate,value,op,threshold,severity,status,note
+data,weekly_duplicate_keys,0.0,==,0,hard,pass,
+data,weekly_reconciles_to_daily_max_rel_diff,0.0,<=,1e-06,hard,pass,34789 fully observed weeks compared
+data,weekly_y_missing_share,0.0,<=,0.02,soft,pass,
+data,series_with_inventory_share,0.9786585365853658,>=,0.95,soft,pass,
+data,n_series,328.0,>=,1,hard,pass,
+forecast,quantiles_monotone_share,1.0,==,1.0,hard,pass,
+forecast,quantiles_non_negative_share,1.0,==,1.0,hard,pass,
+forecast,quantiles_finite_share,1.0,==,1.0,hard,pass,
+forecast,series_with_full_horizon_share,1.0,==,1.0,hard,pass,
+forecast,series_covered,328.0,==,328.0,hard,pass,every series in series.parquet gets a forecast
+forecast,one_model_per_series_share,1.0,==,1.0,hard,pass,
+forecast,selected_wape_overall,0.17356418021230857,<=,0.25,hard,pass,
+forecast,rel_improvement_vs_best_naive,0.23889466230954526,>=,0.05,soft,pass,best naive WAPE 0.228
+forecast,selected_abs_bias,0.05798640146282637,<=,0.1,soft,pass,
+forecast,holdout_coverage_90_calibrated,0.9452489837398377,in,"[0.85, 0.97]",hard,pass,
+forecast,holdout_coverage_80_calibrated,0.9061229674796748,in,"[0.72, 0.93]",soft,pass,
+forecast,calibration_table_complete,48.0,==,48.0,hard,pass,two intervals per model x cluster
+forecast,selection_covers_all_clusters,6.0,==,6.0,hard,pass,
+risk,best_method_recall,0.7378640776699029,>=,0.5,soft,pass,
+risk,prob_method_false_alarm_rate,0.0648320895522388,<=,0.15,soft,pass,
+risk,methods_evaluated,3.0,==,3.0,hard,pass,
+risk,alert_rows_vs_series_with_inventory,321.0,==,321.0,hard,pass,
+risk,severity_values_valid_share,1.0,==,1.0,hard,pass,
+risk,p_stockout_in_unit_interval_share,1.0,==,1.0,hard,pass,
+risk,high_severity_implies_prob_or_cover,1.0,==,1.0,hard,pass,
+orders,one_line_per_series,328.0,==,328.0,hard,pass,
+orders,duplicate_lines,0.0,==,0,hard,pass,
+orders,key_columns_nan_count,0.0,==,0,hard,pass,
+orders,order_qty_non_negative_share,1.0,==,1.0,hard,pass,
+orders,order_qty_moq_multiple_share,1.0,==,1.0,hard,pass,
+orders,discontinued_orders_zero_share,1.0,==,1.0,hard,pass,
+orders,working_capital_consistent_share,1.0,==,1.0,hard,pass,
+orders,service_level_in_unit_interval_share,1.0,==,1.0,hard,pass,
+orders,unflagged_lines_at_target_service_level_share,1.0,>=,0.9,soft,pass,316 unflagged lines
+orders,portfolio_service_level_vs_ma4,0.0018082609541567596,>=,-1e-09,soft,pass,
+orders,lines_below_90_vs_ma4,9.0,>=,0,soft,pass,recommendation should not leave more lines below 90% than the naive policy
+report,summary_sections_present,5.0,==,5.0,hard,pass,
+report,figures_written,10.0,>=,10.0,hard,pass,
+report,deck_slides,10.0,==,10.0,hard,pass,

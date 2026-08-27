@@ -1,0 +1,9 @@
+# Normalise line endings so Windows and Linux checkouts produce identical hashes.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+
+# Binary artefacts
+*.png binary
+*.pptx binary
+*.pdf binary
+*.parquet binary

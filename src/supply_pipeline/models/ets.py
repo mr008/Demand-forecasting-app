@@ -39,7 +39,12 @@ def _fit_one(key: tuple, y: np.ndarray, horizon: int, quantiles: tuple[float, ..
         model = ETSModel(y, error="add", trend="add", damped_trend=True, seasonal=None)
         res = model.fit(disp=False, maxiter=200)
         path = np.asarray(res.forecast(horizon), dtype=float)
-        sims = res.simulate(nsimulations=horizon, repetitions=N_SIMS, anchor="end", random_state=seed)
+        try:
+            sims = res.simulate(nsimulations=horizon, repetitions=N_SIMS, anchor="end", random_state=seed)
+        except TypeError:
+            # statsmodels >= 0.15 dropped the random_state argument; seed the global RNG for reproducibility.
+            np.random.seed(seed)
+            sims = res.simulate(nsimulations=horizon, repetitions=N_SIMS, anchor="end")
     sims = np.asarray(sims, dtype=float)  # (horizon, N_SIMS)
     for h in range(1, horizon + 1):
         row: dict[str, object] = {"upc": key[0], "cedis": key[1], "h": h}

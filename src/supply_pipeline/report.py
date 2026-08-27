@@ -113,7 +113,16 @@ def build_summary(cfg: Config, figs: dict[str, Path]) -> str:
     )
     silent = per_series[(per_series["events"] > 0) & (per_series["alerts"] == 0)]
     n_silent = len(silent)
-    silent_cover = float(silent["cover"].median()) if n_silent else float("nan")
+    if n_silent:
+        silent_text = (
+            f"{n_silent} of the {n_events_series} series with stock-outs never triggered any alert. Their DC held a median of "
+            f"{float(silent['cover'].median()):.0f} days of cover while at least a quarter of their stores were empty: the stock "
+            "existed but was not reaching the shelves. That is an allocation problem between the DC and its stores, invisible "
+            "to any DC-level signal, and the strongest argument for adding store-level cover to the alert once store stock "
+            "history is available beyond 21 days."
+        )
+    else:
+        silent_text = f"Every one of the {n_events_series} series with stock-outs triggered at least one alert during the window."
     flagged = orders[orders["flags"].fillna("") != ""]
 
     md = f"""# Demand forecasting & supply order - results summary
@@ -185,7 +194,7 @@ Per-series view of the window: shaded squares are days when at least 25% of the 
 
 ![risk timeline]({rel(figs["risk_timeline"])})
 
-{n_silent} of the {n_events_series} series with stock-outs never triggered any alert. Their DC held a median of {silent_cover:.0f} days of cover while at least a quarter of their stores were empty: the stock existed but was not reaching the shelves. That is an allocation problem between the DC and its stores, invisible to any DC-level signal, and the strongest argument for adding store-level cover to the alert once store stock history is available beyond 21 days.
+{silent_text}
 
 ## 4. Supply order recommendation
 

@@ -341,6 +341,7 @@ def run(cfg: Config) -> None:
         size=10,
     )
     d.picture(s, f / "risk_window.png", Inches(7.0), Inches(1.6), w=Inches(6.0))
+    d.picture(s, f / "risk_timeline.png", Inches(7.0), Inches(3.9), h=Inches(3.1))
 
     # 7 orders
     s = d.slide("Supply order: what to buy next cycle, and what it costs", "Recommendation engine")

@@ -67,6 +67,7 @@ def build_figures(cfg: Config) -> dict[str, Path]:
         "portfolio": plots.portfolio_forecast(weekly, fc, f / "portfolio_forecast.png"),
         "orders": plots.orders_summary(pd.read_csv(t / "order_summary_cluster.csv"), f / "orders_summary.png"),
         "blind": f / "blind_test.png",
+        "risk_timeline": plots.risk_timeline(scored, f / "risk_timeline.png"),
         "inv_cov": plots.inventory_coverage(
             pd.read_csv(t / "coverage_inventory_by_date.csv", index_col=0), f / "inventory_coverage.png"
         ),
@@ -105,6 +106,14 @@ def build_summary(cfg: Config, figs: dict[str, Path]) -> str:
     lgbm = overall.set_index("model").loc["lgbm"]
     best_naive = overall[overall["model"].isin(["ma4", "seasonal_naive"])].sort_values("wape").iloc[0]
     n_events_series = scored[scored["event"]].groupby(["upc", "cedis"]).ngroups
+    per_series = (
+        scored.assign(any_alert=scored["alert_cover"] | scored["alert_prob"] | scored["alert_iforest"])
+        .groupby(["upc", "cedis"])
+        .agg(events=("event", "sum"), alerts=("any_alert", "sum"), cover=("cover_days", "median"))
+    )
+    silent = per_series[(per_series["events"] > 0) & (per_series["alerts"] == 0)]
+    n_silent = len(silent)
+    silent_cover = float(silent["cover"].median()) if n_silent else float("nan")
     flagged = orders[orders["flags"].fillna("") != ""]
 
     md = f"""# Demand forecasting & supply order - results summary
@@ -171,6 +180,12 @@ Calibrated coverage by cluster for the selected models:
 The cover rule and the forecast-probability scorer both identify the chronic short series with high recall; precision is limited by DCs that hold thin stock but keep stores supplied. The threshold sweep (`risk_threshold_sweep.csv`, right panel of the figure) is the dial planners would use. Alerts as of {cfg.data.as_of}: {alerts["severity"].value_counts().to_dict()} (`data/output/risk_alerts_{cfg.data.as_of}.csv`).
 
 ![risk]({rel(figs["risk"])})
+
+Per-series view of the window: shaded squares are days when at least 25% of the DC's stores were empty; markers are the days each scorer raised an alert. Rows above the dotted line had at least one stock-out; rows below are the most-alerted series that never did (the false alarms).
+
+![risk timeline]({rel(figs["risk_timeline"])})
+
+{n_silent} of the {n_events_series} series with stock-outs never triggered any alert. Their DC held a median of {silent_cover:.0f} days of cover while at least a quarter of their stores were empty: the stock existed but was not reaching the shelves. That is an allocation problem between the DC and its stores, invisible to any DC-level signal, and the strongest argument for adding store-level cover to the alert once store stock history is available beyond 21 days.
 
 ## 4. Supply order recommendation
 

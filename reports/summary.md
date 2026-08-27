@@ -100,6 +100,12 @@ The cover rule and the forecast-probability scorer both identify the chronic sho
 
 ![risk](figures\risk_window.png)
 
+Per-series view of the window: shaded squares are days when at least 25% of the DC's stores were empty; markers are the days each scorer raised an alert. Rows above the dotted line had at least one stock-out; rows below are the most-alerted series that never did (the false alarms).
+
+![risk timeline](figures\risk_timeline.png)
+
+4 of the 15 series with stock-outs never triggered any alert. Their DC held a median of 80 days of cover while at least a quarter of their stores were empty: the stock existed but was not reaching the shelves. That is an allocation problem between the DC and its stores, invisible to any DC-level signal, and the strongest argument for adding store-level cover to the alert once store stock history is available beyond 21 days.
+
 ## 4. Supply order recommendation
 
 Weekly order-up-to policy over a 14-day protection period (lead time 7 + review 7). Demand over the period comes from the selected model's calibrated quantiles (lognormal fit); safety stock is the larger of the catalog policy (`safety_stock_days` x daily demand) and the forecast-uncertainty stock needed for the ABC service-level target (A 95.0%, B 90.0%, C 85.0%). Orders are rounded up to MOQ multiples; discontinued lines are set to zero and flagged; on-hand is projected from the 2026-04-02 snapshot minus sell-out observed before the period starts. Baselines: 4-week moving average and last-year-same-weeks with the same policy, judged under the same demand distribution.

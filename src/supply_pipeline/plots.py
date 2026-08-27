@@ -166,6 +166,47 @@ def risk_window(scored: pd.DataFrame, sweep: pd.DataFrame, out: Path) -> Path:
     return _save(fig, out)
 
 
+def risk_timeline(scored: pd.DataFrame, out: Path, max_rows: int = 30) -> Path:
+    """Per-series timeline of the inventory window: stock-out days shaded, alert days marked.
+
+    Rows are every series with at least one stock-out event, followed by the
+    series with the most alert days but no event (the false alarms), up to
+    ``max_rows`` in total.
+    """
+    s = scored.copy()
+    s["key"] = s["upc"].astype(str) + " @ " + s["cedis"].astype(str)
+    s["any_alert"] = s["alert_cover"] | s["alert_prob"]
+    per = s.groupby("key").agg(events=("event", "sum"), alerts=("any_alert", "sum"))
+    hits = per[per["events"] > 0].sort_values("events", ascending=False)
+    misses = per[per["events"] == 0].sort_values("alerts", ascending=False).head(max(0, max_rows - len(hits)))
+    keys = list(hits.index) + list(misses.index)
+    days = sorted(s["date"].unique())
+    day_idx = {d: i for i, d in enumerate(days)}
+    fig, ax = plt.subplots(figsize=(10, 0.28 * len(keys) + 1.6))
+    for r, k in enumerate(keys):
+        g = s[s["key"] == k]
+        ev = g[g["event"]]
+        ax.scatter([day_idx[d] for d in ev["date"]], [r] * len(ev), marker="s", s=60, color="#D9C7B8", linewidths=0, zorder=1)
+        cov = g[g["alert_cover"]]
+        ax.scatter([day_idx[d] for d in cov["date"]], [r] * len(cov), marker="_", s=70, color="#B9911E", linewidths=1.6, zorder=2)
+        pr = g[g["alert_prob"]]
+        ax.scatter([day_idx[d] for d in pr["date"]], [r] * len(pr), marker="o", s=14, color="#0E6B58", zorder=3)
+    ax.axhline(len(hits) - 0.5, color="#999", lw=0.8, ls=":")
+    ax.set_yticks(range(len(keys)), keys, fontsize=6.5)
+    ax.set_ylim(len(keys) - 0.5, -0.5)
+    ax.set_xticks(range(len(days)), [pd.Timestamp(d).strftime("%d %b") for d in days], rotation=60, fontsize=7)
+    ax.set_xlim(-0.5, len(days) - 0.5)
+    ax.scatter([], [], marker="s", s=60, color="#D9C7B8", label="stock-out day (>= 25% of stores empty)")
+    ax.scatter([], [], marker="_", s=70, color="#B9911E", linewidths=1.6, label="cover-rule alert")
+    ax.scatter([], [], marker="o", s=14, color="#0E6B58", label="forecast-probability alert")
+    ax.legend(fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+    ax.set_title(
+        f"Alerts vs actual stock-outs, {len(hits)} series with events (top) and {len(misses)} most-alerted without (bottom)"
+    )
+    ax.grid(axis="x", color="#eee", lw=0.5)
+    return _save(fig, out)
+
+
 def series_examples(weekly: pd.DataFrame, fc: pd.DataFrame, series: pd.DataFrame, out: Path) -> Path:
     """Four representative series with the final 8-week forecast fan."""
     s = series.copy()

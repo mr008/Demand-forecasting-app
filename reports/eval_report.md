@@ -44,5 +44,5 @@
 | orders | portfolio_service_level_vs_ma4 | 0.001808 | >= | -1e-09 | soft | pass |  |
 | orders | lines_below_90_vs_ma4 | 9 | >= | 0 | soft | pass | recommendation should not leave more lines below 90% than the naive policy |
 | report | summary_sections_present | 5 | == | 5.0 | hard | pass |  |
-| report | figures_written | 11 | >= | 10.0 | hard | pass |  |
+| report | figures_written | 12 | >= | 10.0 | hard | pass |  |
 | report | deck_slides | 10 | == | 10.0 | hard | pass |  |

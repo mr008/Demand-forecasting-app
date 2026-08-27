@@ -39,5 +39,5 @@ orders,unflagged_lines_at_target_service_level_share,1.0,>=,0.9,soft,pass,316 un
 orders,portfolio_service_level_vs_ma4,0.0018082609541567596,>=,-1e-09,soft,pass,
 orders,lines_below_90_vs_ma4,9.0,>=,0,soft,pass,recommendation should not leave more lines below 90% than the naive policy
 report,summary_sections_present,5.0,==,5.0,hard,pass,
-report,figures_written,11.0,>=,10.0,hard,pass,
+report,figures_written,12.0,>=,10.0,hard,pass,
 report,deck_slides,10.0,==,10.0,hard,pass,
